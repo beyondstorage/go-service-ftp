@@ -1,5 +1,7 @@
-## How to create service that supports go-storage?
+## go-service-ftp
 
-- Click [Use this template](https://github.com/aos-dev/go-service-example/generate) to generate a new project.
-- Update `service.toml` to match service ability.
-- Execute `make build` to generate and build project.
+FTP is the oldest network tool in the history of the Internet and is still widely used in many areas. 
+This project will implement [go-storage]'s Storager interface for FTP, 
+enabling users to use a unified interface to manipulate data on FTP servers.
+
+[go-storage]: https://github.com/aos-dev/go-storage/
