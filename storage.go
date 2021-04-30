@@ -1,4 +1,4 @@
-package example
+package ftp
 
 import (
 	"context"
