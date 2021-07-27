@@ -3,19 +3,39 @@ package ftp
 import (
 	"context"
 	"io"
+	"path/filepath"
 
 	. "github.com/beyondstorage/go-storage/v4/types"
 )
 
 func (s *Storage) create(path string, opt pairStorageCreate) (o *Object) {
-	panic("not implemented")
+	if opt.HasObjectMode && opt.ObjectMode.IsDir() {
+		o = s.newObject(false)
+		o.Mode = ModeDir
+	} else {
+		o = s.newObject(false)
+		o.Mode = ModeRead
+	}
+
+	o.ID = filepath.Join(s.workDir, path)
+	o.Path = path
+	return o
 }
 
 func (s *Storage) delete(ctx context.Context, path string, opt pairStorageDelete) (err error) {
-	panic("not implemented")
+	rp := s.getAbsPath(path)
+	s.connection.ChangeDir(filepath.Dir(rp))
+	err = s.connection.Delete(filepath.Base(rp))
+	s.connection.ChangeDir(s.workDir)
+	if err != nil {
+		return err
+	}
+	return
 }
 
 func (s *Storage) list(ctx context.Context, path string, opt pairStorageList) (oi *ObjectIterator, err error) {
+	s.connection.ChangeDir(path)
+
 	panic("not implemented")
 }
 

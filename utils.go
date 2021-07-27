@@ -2,6 +2,7 @@ package ftp
 
 import (
 	"fmt"
+	"path/filepath"
 	"time"
 
 	"github.com/jlaffaye/ftp"
@@ -14,8 +15,8 @@ import (
 type Storage struct {
 	connection *ftp.ServerConn
 	user       string
-
-	workDir string
+	password   string
+	workDir    string
 
 	defaultPairs DefaultStoragePairs
 	features     StorageFeatures
@@ -39,20 +40,27 @@ func newStoragerWithFTPClient(pairs ...types.Pair) (store *Storage, err error) {
 			err = services.InitError{Op: "new_storager", Type: Type, Err: formatErr(err), Pairs: pairs}
 		}
 	}()
-	opt, err = parsePairStorageNew(pairs)
+	//opt, err = parsePairStorageNew(pairs)
 	if err != nil {
 		return
 	}
-
 	c, err := ftp.Dial("ftp.example.org:21", ftp.DialWithTimeout(5*time.Second))
 	if err != nil {
 		return
 	}
 	store = &Storage{
+
 		connection: c,
+		user:       "anonymous",
+		password:   "anonymous",
 		workDir:    "",
 	}
 
+	c.Login(store.user, store.password)
+	store.workDir, err = c.CurrentDir()
+	if err != nil {
+		return nil, err
+	}
 	return
 }
 
@@ -61,6 +69,34 @@ func formatErr(err error) error {
 		return err
 	}
 	panic("implement me")
+}
+
+func (s *Storage) getAbsPath(path string) string {
+	return filepath.Join(s.workDir, path)
+}
+
+func (s *Storage) getNameList(path string) (namelist []string, err error) {
+	namelist, err = s.connection.NameList(s.getAbsPath(path))
+	if err != nil {
+		return nil, err
+	}
+	return
+}
+
+func (s *Storage) isDirPath(path string) bool {
+
+	originPath, err := s.connection.CurrentDir()
+	if err != nil {
+		return false
+	}
+	if originPath == s.getAbsPath(path) {
+		return true
+	}
+	s.connection.ChangeDir(path)
+	nowPath, err := s.connection.CurrentDir()
+	s.connection.ChangeDir(s.workDir)
+	return !(nowPath == originPath)
+
 }
 
 func (s *Storage) newObject(done bool) *types.Object {
