@@ -3,6 +3,7 @@ package ftp
 import (
 	"fmt"
 	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/jlaffaye/ftp"
@@ -11,11 +12,16 @@ import (
 	"github.com/beyondstorage/go-storage/v4/types"
 )
 
+const (
+	PathSeparator = string(filepath.Separator)
+)
+
 // Storage is the example client.
 type Storage struct {
 	connection *ftp.ServerConn
 	user       string
 	password   string
+	name       string
 	workDir    string
 
 	defaultPairs DefaultStoragePairs
@@ -40,27 +46,30 @@ func newStoragerWithFTPClient(pairs ...types.Pair) (store *Storage, err error) {
 			err = services.InitError{Op: "new_storager", Type: Type, Err: formatErr(err), Pairs: pairs}
 		}
 	}()
-	//opt, err = parsePairStorageNew(pairs)
-	if err != nil {
-		return
-	}
-	c, err := ftp.Dial("ftp.example.org:21", ftp.DialWithTimeout(5*time.Second))
-	if err != nil {
-		return
-	}
+
 	store = &Storage{
 
-		connection: c,
+		connection: nil,
 		user:       "anonymous",
 		password:   "anonymous",
-		workDir:    "",
+		name:       "localhost:21",
+		workDir:    "/",
 	}
 
-	c.Login(store.user, store.password)
-	store.workDir, err = c.CurrentDir()
+	opt, err := parsePairStorageNew(pairs)
 	if err != nil {
-		return nil, err
+		return
 	}
+	if opt.HasName {
+		store.name = opt.Name
+	}
+	if opt.HasWorkDir {
+		store.workDir = opt.WorkDir
+	}
+	if opt.HasCredential {
+
+	}
+	store.connect()
 	return
 }
 
@@ -71,8 +80,38 @@ func formatErr(err error) error {
 	panic("implement me")
 }
 
+func (s *Storage) connect() error {
+	c, err := ftp.Dial(s.name, ftp.DialWithTimeout(5*time.Second))
+	if err != nil {
+		return err
+	}
+
+	c.Login(s.user, s.password)
+	c.ChangeDir(s.workDir)
+	if err != nil {
+		return err
+	}
+	s.connection = c
+	return err
+}
+
+func (s *Storage) makeDir(path string) (err error) {
+	rp := s.getAbsPath(path)
+	err = s.connection.MakeDir(rp)
+	return
+}
+
 func (s *Storage) getAbsPath(path string) string {
-	return filepath.Join(s.workDir, path)
+	if filepath.IsAbs(path) {
+		return path
+	}
+	absPath := filepath.Join(s.workDir, path)
+
+	// Join will clean the trailing "/", we need to append it back.
+	if strings.HasSuffix(path, PathSeparator) {
+		absPath += PathSeparator
+	}
+	return absPath
 }
 
 func (s *Storage) getNameList(path string) (namelist []string, err error) {
@@ -83,19 +122,19 @@ func (s *Storage) getNameList(path string) (namelist []string, err error) {
 	return
 }
 
-func (s *Storage) isDirPath(path string) bool {
+func (s *Storage) isDir(path string) (bool, error) {
 
 	originPath, err := s.connection.CurrentDir()
 	if err != nil {
-		return false
+		return false, err
 	}
 	if originPath == s.getAbsPath(path) {
-		return true
+		return true, err
 	}
 	s.connection.ChangeDir(path)
 	nowPath, err := s.connection.CurrentDir()
 	s.connection.ChangeDir(s.workDir)
-	return !(nowPath == originPath)
+	return !(nowPath == originPath), err
 
 }
 
