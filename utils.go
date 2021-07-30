@@ -142,6 +142,26 @@ func (s *Storage) newObject(done bool) *types.Object {
 	return types.NewObject(s, done)
 }
 
+func (s *Storage) mapMode(fet ftp.EntryType) types.ObjectMode {
+	switch fet {
+	case ftp.EntryTypeFile:
+		return types.ModeRead
+	case ftp.EntryTypeFolder:
+		return types.ModeDir
+	case ftp.EntryTypeLink:
+		return types.ModeLink
+	}
+	return types.ModeRead
+}
+
+func (s *Storage) formatFileObject(fe *ftp.Entry, parent string) (obj *types.Object, err error) {
+	obj = types.NewObject(s, false)
+	obj.ID = filepath.Join(parent, fe.Name)
+	obj.Mode = s.mapMode(fe.Type)
+	obj.Path = fe.Target
+	return
+}
+
 func (s *Storage) formatError(op string, err error, path ...string) error {
 	panic("implement me")
 }
