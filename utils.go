@@ -32,7 +32,7 @@ type Storage struct {
 
 // String implements Storager.String
 func (s *Storage) String() string {
-	return fmt.Sprintf("Storager ftp {User: %s, Password: %s, WorkDir: %s}", s.user, s.password, s.workDir)
+	return fmt.Sprintf("Storager ftp {Name: %s, User: %s, WorkDir: %s}", s.name, s.user, s.workDir)
 }
 
 // NewStorager will create Storager only.
