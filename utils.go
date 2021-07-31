@@ -3,6 +3,7 @@ package ftp
 import (
 	"fmt"
 	"path/filepath"
+	"regexp"
 	"strings"
 	"time"
 
@@ -43,7 +44,7 @@ func NewStorager(pairs ...types.Pair) (types.Storager, error) {
 func newStoragerWithFTPClient(pairs ...types.Pair) (store *Storage, err error) {
 	defer func() {
 		if err != nil {
-			err = services.InitError{Op: "new_storager", Type: Type, Err: formatErr(err), Pairs: pairs}
+			err = services.InitError{Op: "new_storager", Type: Type, Err: formatError(err), Pairs: pairs}
 		}
 	}()
 
@@ -71,13 +72,6 @@ func newStoragerWithFTPClient(pairs ...types.Pair) (store *Storage, err error) {
 	}
 	store.connect()
 	return
-}
-
-func formatErr(err error) error {
-	if _, ok := err.(services.InternalError); ok {
-		return err
-	}
-	panic("implement me")
 }
 
 func (s *Storage) connect() error {
@@ -162,6 +156,36 @@ func (s *Storage) formatFileObject(fe *ftp.Entry, parent string) (obj *types.Obj
 	return
 }
 
+func formatError(err error) error {
+	if _, ok := err.(services.InternalError); ok {
+		return err
+	}
+	var estr string = err.Error()
+	ereg, regerr := regexp.Compile(estr)
+	if ereg.Find([]byte("i/o timeout")) != nil ||
+		ereg.Find([]byte("missing port in address")) != nil ||
+		ereg.Find([]byte("530 Login or password incorrect!")) != nil {
+		return fmt.Errorf("%w, %v", services.ErrPermissionDenied, err)
+	} else if ereg.Find([]byte("550 File not found")) != nil {
+		return fmt.Errorf("%w, %v", services.ErrObjectNotExist, err)
+	} else if ereg.Find([]byte("550 Filename invalid")) != nil {
+		return fmt.Errorf("%w, %v", services.ErrRequestThrottled, err)
+	} else if ereg.Find([]byte("<nil>")) != nil || regerr != nil {
+		return fmt.Errorf("%w, %v", services.ErrServiceInternal, err)
+	}
+
+	return fmt.Errorf("%w, %v", services.ErrUnexpected, err)
+}
+
 func (s *Storage) formatError(op string, err error, path ...string) error {
-	panic("implement me")
+	if err == nil {
+		return nil
+	}
+
+	return services.StorageError{
+		Op:       op,
+		Err:      formatError(err),
+		Storager: s,
+		Path:     path,
+	}
 }
