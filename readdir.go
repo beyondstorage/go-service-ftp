@@ -12,19 +12,16 @@ func (s *Storage) listDirNext(ctx context.Context, page *types.ObjectPage) (err 
 		input.objList, err = s.connection.List(input.rp)
 	}
 	n := len(input.objList)
-	for i := 0; i <= n; i++ {
-		if n == i {
-			return types.IterateDone
-		}
-		v := input.objList[i]
-
-		obj, err := s.formatFileObject(v, input.rp)
-		if err != nil {
-			return err
-		}
-		obj.GetID()
-		page.Data = append(page.Data, obj)
-		input.counter++
+	if input.counter >= n {
+		return types.IterateDone
 	}
-	return err
+	v := input.objList[input.counter]
+	obj, err := s.formatFileObject(v, input.rp)
+	if err != nil {
+		return err
+	}
+	obj.GetID()
+	page.Data = append(page.Data, obj)
+	input.counter++
+	return
 }
