@@ -49,7 +49,6 @@ func newStoragerWithFTPClient(pairs ...types.Pair) (store *Storage, err error) {
 	}()
 
 	store = &Storage{
-
 		connection: nil,
 		user:       "anonymous",
 		password:   "anonymous",

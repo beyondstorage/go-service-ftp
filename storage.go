@@ -142,7 +142,6 @@ func (s *Storage) stat(ctx context.Context, path string, opt pairStorageStat) (o
 		o.Mode |= ModeDir
 		return
 	}
-
 	if fe.Type != ftp.EntryTypeLink {
 		o.Mode |= ModeRead | ModePage | ModeAppend
 
@@ -152,10 +151,7 @@ func (s *Storage) stat(ctx context.Context, path string, opt pairStorageStat) (o
 		if v := mime.DetectFilePath(path); v != "" {
 			o.SetContentType(v)
 		}
-	}
-
-	// Check if this file is a link.
-	if fe.Type == ftp.EntryTypeLink {
+	} else {
 		o.Mode |= ModeLink
 
 		target, err := filepath.EvalSymlinks(rp)
