@@ -2,11 +2,12 @@ package ftp
 
 import (
 	"context"
-	"errors"
 	"io"
 	"path/filepath"
 
+	"github.com/aos-dev/go-storage/v2/services"
 	"github.com/beyondstorage/go-storage/v4/pkg/iowrap"
+	"github.com/beyondstorage/go-storage/v4/services"
 	. "github.com/beyondstorage/go-storage/v4/types"
 	"github.com/jlaffaye/ftp"
 	mime "github.com/qingstor/go-mime"
@@ -37,10 +38,6 @@ func (s *Storage) create(path string, opt pairStorageCreate) (o *Object) {
 }
 func (s *Storage) createDir(ctx context.Context, path string) (o *Object, err error) {
 	rp := s.getAbsPath(path)
-	err = s.connection.ChangeDir(s.workDir)
-	if err != nil {
-		return nil, err
-	}
 	err = s.connection.MakeDir(rp)
 	if err != nil {
 		return nil, err
@@ -55,18 +52,11 @@ func (s *Storage) createDir(ctx context.Context, path string) (o *Object, err er
 
 func (s *Storage) delete(ctx context.Context, path string, opt pairStorageDelete) (err error) {
 	rp := s.getAbsPath(path)
-	err = s.connection.ChangeDir(filepath.Dir(rp))
+	err = s.connection.Delete(rp)
 	if err != nil {
 		return err
 	}
-	err = s.connection.Delete(filepath.Base(rp))
-	if err != nil {
-		return err
-	}
-	err = s.connection.ChangeDir(s.workDir)
-	if err != nil {
-		return err
-	}
+
 	return
 }
 func (input *listDirInput) ContinuationToken() string {
@@ -132,17 +122,25 @@ func (s *Storage) stat(ctx context.Context, path string, opt pairStorageStat) (o
 		}
 	}
 	if fe == nil {
-		return nil, errors.New("file is not in dir")
+		return nil, services.ErrObjectNotExist
 	}
 	o = s.newObject(true)
 	o.ID = rp
 	o.Path = path
 
-	if fe.Type == ftp.EntryTypeFolder {
+	switch fe.Type {
+	case ftp.EntryTypeFolder:
 		o.Mode |= ModeDir
 		return
-	}
-	if fe.Type != ftp.EntryTypeLink {
+	case ftp.EntryTypeLink:
+		o.Mode |= ModeLink
+
+		target, err := filepath.EvalSymlinks(rp)
+		if err != nil {
+			return nil, err
+		}
+		o.SetLinkTarget(target)
+	default:
 		o.Mode |= ModeRead | ModePage | ModeAppend
 
 		o.SetContentLength(int64(fe.Size))
@@ -151,14 +149,6 @@ func (s *Storage) stat(ctx context.Context, path string, opt pairStorageStat) (o
 		if v := mime.DetectFilePath(path); v != "" {
 			o.SetContentType(v)
 		}
-	} else {
-		o.Mode |= ModeLink
-
-		target, err := filepath.EvalSymlinks(rp)
-		if err != nil {
-			return nil, err
-		}
-		o.SetLinkTarget(target)
 	}
 
 	return o, nil

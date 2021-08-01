@@ -2,8 +2,8 @@ package ftp
 
 import (
 	"fmt"
+	"net/textproto"
 	"path/filepath"
-	"regexp"
 	"strings"
 	"time"
 
@@ -149,21 +149,20 @@ func formatError(err error) error {
 	if _, ok := err.(services.InternalError); ok {
 		return err
 	}
-	var estr string = err.Error()
-	ereg, regerr := regexp.Compile(estr)
-	if ereg.Find([]byte("i/o timeout")) != nil ||
-		ereg.Find([]byte("missing port in address")) != nil ||
-		ereg.Find([]byte("530 Login or password incorrect!")) != nil {
-		return fmt.Errorf("%w, %v", services.ErrPermissionDenied, err)
-	} else if ereg.Find([]byte("550 File not found")) != nil ||
-		ereg.Find([]byte("file is not in dir")) != nil {
-		return fmt.Errorf("%w, %v", services.ErrObjectNotExist, err)
-	} else if ereg.Find([]byte("550 Filename invalid")) != nil {
-		return fmt.Errorf("%w, %v", services.ErrRequestThrottled, err)
-	} else if ereg.Find([]byte("<nil>")) != nil || regerr != nil {
-		return fmt.Errorf("%w, %v", services.ErrServiceInternal, err)
+	switch errX := err.(type) {
+	case *textproto.Error:
+		switch errX.Code {
+		case ftp.StatusInvalidCredentials,
+			ftp.StatusLoginNeedAccount,
+			ftp.StatusStorNeedAccount:
+			return fmt.Errorf("%w, %v", services.ErrPermissionDenied, err)
+		case ftp.StatusFileUnavailable,
+			ftp.StatusFileActionIgnored:
+			return fmt.Errorf("%w, %v", services.ErrObjectNotExist, err)
+		default:
+			return fmt.Errorf("%w, %v", services.ErrServiceInternal, err)
+		}
 	}
-
 	return fmt.Errorf("%w, %v", services.ErrUnexpected, err)
 }
 

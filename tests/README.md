@@ -21,7 +21,6 @@ Set following environment variables:
 ```shell
 export STORAGE_FTP_INTEGRATION_TEST=on
 export STORAGE_FTP_NAME=name:port
-export STORAGE_FTP_WORKDIR=/
 ```
 
 Run tests
