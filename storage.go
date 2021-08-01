@@ -2,6 +2,7 @@ package ftp
 
 import (
 	"context"
+	"errors"
 	"io"
 	"path/filepath"
 
@@ -17,9 +18,8 @@ type listDirInput struct {
 
 	started           bool
 	continuationToken string
-	objChan           []*ftp.Entry
+	objList           []*ftp.Entry
 	counter           int
-	buf               []byte
 }
 
 func (s *Storage) create(path string, opt pairStorageCreate) (o *Object) {
@@ -37,10 +37,13 @@ func (s *Storage) create(path string, opt pairStorageCreate) (o *Object) {
 }
 func (s *Storage) createDir(ctx context.Context, path string) (o *Object, err error) {
 	rp := s.getAbsPath(path)
-	s.connection.ChangeDir(s.workDir)
+	err = s.connection.ChangeDir(s.workDir)
+	if err != nil {
+		return nil, err
+	}
 	err = s.connection.MakeDir(rp)
 	if err != nil {
-		return
+		return nil, err
 	}
 
 	o = s.newObject(true)
@@ -52,9 +55,15 @@ func (s *Storage) createDir(ctx context.Context, path string) (o *Object, err er
 
 func (s *Storage) delete(ctx context.Context, path string, opt pairStorageDelete) (err error) {
 	rp := s.getAbsPath(path)
-	s.connection.ChangeDir(filepath.Dir(rp))
+	err = s.connection.ChangeDir(filepath.Dir(rp))
+	if err != nil {
+		return err
+	}
 	err = s.connection.Delete(filepath.Base(rp))
-	s.connection.ChangeDir(s.workDir)
+	if err != nil {
+		return err
+	}
+	err = s.connection.ChangeDir(s.workDir)
 	if err != nil {
 		return err
 	}
@@ -65,7 +74,6 @@ func (input *listDirInput) ContinuationToken() string {
 }
 
 func (s *Storage) list(ctx context.Context, path string, opt pairStorageList) (oi *ObjectIterator, err error) {
-	//rp := s.getAbsPath(path)
 	input := listDirInput{
 		// Always keep service original name as rp.
 		rp: s.getAbsPath(path),
@@ -76,8 +84,6 @@ func (s *Storage) list(ctx context.Context, path string, opt pairStorageList) (o
 		// else, we can start directly.
 		started:           !opt.HasContinuationToken,
 		continuationToken: opt.ContinuationToken,
-
-		buf: make([]byte, 8192),
 	}
 
 	return NewObjectIterator(ctx, s.listDirNext, &input), nil
@@ -92,17 +98,13 @@ func (s *Storage) metadata(opt pairStorageMetadata) (meta *StorageMeta) {
 
 func (s *Storage) read(ctx context.Context, path string, w io.Writer, opt pairStorageRead) (n int64, err error) {
 	rp := s.getAbsPath(path)
-
-	if err != nil {
-		return 0, err
-	}
-
-	r, err := s.connection.Retr(rp)
+	var offset uint64 = 0
 	if opt.HasOffset {
-		r, err = s.connection.RetrFrom(rp, uint64(opt.Offset))
-		if err != nil {
-			return n, err
-		}
+		offset = uint64(opt.Offset)
+	}
+	r, err := s.connection.RetrFrom(rp, offset)
+	if err != nil {
+		return n, err
 	}
 	defer func() {
 		closeErr := r.Close()
@@ -111,9 +113,6 @@ func (s *Storage) read(ctx context.Context, path string, w io.Writer, opt pairSt
 		}
 	}()
 
-	// if opt.HasIoCallback {
-	// 	r = iowrap.CallbackReadCloser(*r, opt.IoCallback)
-	// }
 	if opt.HasSize {
 		return io.CopyN(w, r, opt.Size)
 	}
@@ -122,7 +121,6 @@ func (s *Storage) read(ctx context.Context, path string, w io.Writer, opt pairSt
 
 func (s *Storage) stat(ctx context.Context, path string, opt pairStorageStat) (o *Object, err error) {
 	rp := s.getAbsPath(path)
-
 	fl, err := s.connection.List(filepath.Dir(rp))
 	if err != nil {
 		return nil, err
@@ -134,7 +132,7 @@ func (s *Storage) stat(ctx context.Context, path string, opt pairStorageStat) (o
 		}
 	}
 	if fe == nil {
-		return nil, err
+		return nil, errors.New("file is not in dir")
 	}
 	o = s.newObject(true)
 	o.ID = rp
@@ -171,7 +169,6 @@ func (s *Storage) stat(ctx context.Context, path string, opt pairStorageStat) (o
 }
 
 func (s *Storage) write(ctx context.Context, path string, r io.Reader, size int64, opt pairStorageWrite) (n int64, err error) {
-
 	lr := io.LimitReader(r, n)
 	if opt.HasIoCallback {
 		lr = iowrap.CallbackReader(lr, opt.IoCallback)

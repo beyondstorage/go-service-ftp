@@ -6,18 +6,17 @@ import (
 	types "github.com/beyondstorage/go-storage/v4/types"
 )
 
-func (s *Storage) listDirNext(ctx context.Context, page *types.ObjectPage) error {
+func (s *Storage) listDirNext(ctx context.Context, page *types.ObjectPage) (err error) {
 	input := page.Status.(*listDirInput)
-	var err error = nil
-	if input.objChan == nil {
-		input.objChan, err = s.connection.List(input.rp)
+	if input.objList == nil {
+		input.objList, err = s.connection.List(input.rp)
 	}
-	n := len(input.objChan)
+	n := len(input.objList)
 	for i := 0; i <= n; i++ {
 		if n == i {
 			return types.IterateDone
 		}
-		v := input.objChan[i]
+		v := input.objList[i]
 
 		obj, err := s.formatFileObject(v, input.rp)
 		if err != nil {

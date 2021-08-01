@@ -70,7 +70,10 @@ func newStoragerWithFTPClient(pairs ...types.Pair) (store *Storage, err error) {
 	if opt.HasCredential {
 
 	}
-	store.connect()
+	err = store.connect()
+	if err != nil {
+		return nil, err
+	}
 	return
 }
 
@@ -80,8 +83,11 @@ func (s *Storage) connect() error {
 		return err
 	}
 
-	c.Login(s.user, s.password)
-	c.ChangeDir(s.workDir)
+	err = c.Login(s.user, s.password)
+	if err != nil {
+		return err
+	}
+	err = c.ChangeDir(s.workDir)
 	if err != nil {
 		return err
 	}
@@ -114,22 +120,6 @@ func (s *Storage) getNameList(path string) (namelist []string, err error) {
 		return nil, err
 	}
 	return
-}
-
-func (s *Storage) isDir(path string) (bool, error) {
-
-	originPath, err := s.connection.CurrentDir()
-	if err != nil {
-		return false, err
-	}
-	if originPath == s.getAbsPath(path) {
-		return true, err
-	}
-	s.connection.ChangeDir(path)
-	nowPath, err := s.connection.CurrentDir()
-	s.connection.ChangeDir(s.workDir)
-	return !(nowPath == originPath), err
-
 }
 
 func (s *Storage) newObject(done bool) *types.Object {
@@ -166,7 +156,8 @@ func formatError(err error) error {
 		ereg.Find([]byte("missing port in address")) != nil ||
 		ereg.Find([]byte("530 Login or password incorrect!")) != nil {
 		return fmt.Errorf("%w, %v", services.ErrPermissionDenied, err)
-	} else if ereg.Find([]byte("550 File not found")) != nil {
+	} else if ereg.Find([]byte("550 File not found")) != nil ||
+		ereg.Find([]byte("file is not in dir")) != nil {
 		return fmt.Errorf("%w, %v", services.ErrObjectNotExist, err)
 	} else if ereg.Find([]byte("550 Filename invalid")) != nil {
 		return fmt.Errorf("%w, %v", services.ErrRequestThrottled, err)
