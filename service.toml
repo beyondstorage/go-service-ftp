@@ -1,7 +1,8 @@
 name = "ftp"
 
-[namespace.storage]
-optional = ["credential","work_dir","name"]
+[namespace.storage.new]
+required = ["name"]
+optional = ["work_dir","credential"]
 
 [namespace.storage.op.create]
 optional = ["object_mode"]
