@@ -117,8 +117,8 @@ func (s *Storage) stat(ctx context.Context, path string, opt pairStorageStat) (o
 	if err != nil {
 		return nil, err
 	}
-	var fe *ftp.Entry = fl[0]
 
+	var fe *ftp.Entry = fl[0]
 	if fe == nil {
 		return nil, services.ErrObjectNotExist
 	}
@@ -133,7 +133,7 @@ func (s *Storage) stat(ctx context.Context, path string, opt pairStorageStat) (o
 	case ftp.EntryTypeLink:
 		o.Mode |= ModeLink
 
-		target, err := filepath.EvalSymlinks(rp)
+		target := fe.Target
 		if err != nil {
 			return nil, err
 		}

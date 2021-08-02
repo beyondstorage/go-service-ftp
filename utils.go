@@ -14,10 +14,6 @@ import (
 	"github.com/jlaffaye/ftp"
 )
 
-const (
-	PathSeparator = string(filepath.Separator)
-)
-
 // Storage is the example client.
 type Storage struct {
 	connection *ftp.ServerConn
@@ -39,10 +35,10 @@ func (s *Storage) String() string {
 
 // NewStorager will create Storager only.
 func NewStorager(pairs ...types.Pair) (types.Storager, error) {
-	return newStoragerWithFTPClient(pairs...)
+	return newStorager(pairs...)
 }
 
-func newStoragerWithFTPClient(pairs ...types.Pair) (store *Storage, err error) {
+func newStorager(pairs ...types.Pair) (store *Storage, err error) {
 	defer func() {
 		if err != nil {
 			err = services.InitError{Op: "new_storager", Type: Type, Err: formatError(err), Pairs: pairs}
@@ -122,10 +118,9 @@ func (s *Storage) connect() error {
 	return err
 }
 
-func (s *Storage) makeDir(path string) (err error) {
+func (s *Storage) makeDir(path string) error {
 	rp := s.getAbsPath(path)
-	err = s.connection.MakeDir(rp)
-	return
+	return s.connection.MakeDir(rp)
 }
 
 func (s *Storage) getAbsPath(path string) string {
@@ -135,8 +130,8 @@ func (s *Storage) getAbsPath(path string) string {
 	absPath := filepath.Join(s.workDir, path)
 
 	// Join will clean the trailing "/", we need to append it back.
-	if strings.HasSuffix(path, PathSeparator) {
-		absPath += PathSeparator
+	if strings.HasSuffix(path, "/") {
+		absPath += "/"
 	}
 	return absPath
 }
@@ -187,8 +182,6 @@ func formatError(err error) error {
 		case ftp.StatusFileUnavailable,
 			ftp.StatusFileActionIgnored:
 			return fmt.Errorf("%w, %v", services.ErrObjectNotExist, err)
-		case ftp.StatusExceededStorage:
-			return fmt.Errorf("%w, %v", services.ErrRequestThrottled, err)
 		default:
 			return fmt.Errorf("%w, %v", services.ErrServiceInternal, err)
 		}
