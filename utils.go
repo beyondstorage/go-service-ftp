@@ -159,6 +159,8 @@ func formatError(err error) error {
 		case ftp.StatusFileUnavailable,
 			ftp.StatusFileActionIgnored:
 			return fmt.Errorf("%w, %v", services.ErrObjectNotExist, err)
+		case ftp.StatusExceededStorage:
+			return fmt.Errorf("%w, %v", services.ErrRequestThrottled, err)
 		default:
 			return fmt.Errorf("%w, %v", services.ErrServiceInternal, err)
 		}
