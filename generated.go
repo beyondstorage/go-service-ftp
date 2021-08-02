@@ -6,13 +6,11 @@ import (
 	"io"
 	"time"
 
-	"github.com/beyondstorage/go-storage/v4/pkg/credential"
 	"github.com/beyondstorage/go-storage/v4/pkg/httpclient"
 	"github.com/beyondstorage/go-storage/v4/services"
 	. "github.com/beyondstorage/go-storage/v4/types"
 )
 
-var _ credential.Provider
 var _ Storager
 var _ services.ServiceError
 var _ httpclient.Options
@@ -99,16 +97,12 @@ type pairStorageNew struct {
 
 	// Required pairs
 	// Optional pairs
-	HasDefaultStoragePairs bool
-	DefaultStoragePairs    DefaultStoragePairs
-	HasStorageFeatures     bool
-	StorageFeatures        StorageFeatures
-	HasWorkDir             bool
-	WorkDir                string
-	HasName                bool
-	Name                   string
-	HasCredential          bool
-	Credential             string
+	HasCredential bool
+	Credential    string
+	HasEndpoint   bool
+	Endpoint      string
+	HasWorkDir    bool
+	WorkDir       string
 }
 
 // parsePairStorageNew will parse Pair slice into *pairStorageNew
@@ -121,32 +115,25 @@ func parsePairStorageNew(opts []Pair) (pairStorageNew, error) {
 		switch v.Key {
 		// Required pairs
 		// Optional pairs
-		case "default_storage_pairs":
-			if result.HasDefaultStoragePairs {
+		case "credential":
+			if result.HasCredential {
 				continue
 			}
-			result.HasDefaultStoragePairs = true
-			result.DefaultStoragePairs = v.Value.(DefaultStoragePairs)
-		case "storage_features":
-			if result.HasStorageFeatures {
+			result.HasCredential = true
+			result.Credential = v.Value.(string)
+		case "endpoint":
+			if result.HasEndpoint {
 				continue
 			}
-			result.HasStorageFeatures = true
-			result.StorageFeatures = v.Value.(StorageFeatures)
+			result.HasEndpoint = true
+			result.Endpoint = v.Value.(string)
 		case "work_dir":
 			if result.HasWorkDir {
 				continue
 			}
 			result.HasWorkDir = true
 			result.WorkDir = v.Value.(string)
-		case "name":
-			if result.HasName {
-				continue
-			}
-			result.HasName = true
-			result.Name = v.Value.(string)
 		}
-
 	}
 
 	return result, nil
@@ -230,10 +217,10 @@ func (s *Storage) parsePairStorageDelete(opts []Pair) (pairStorageDelete, error)
 // pairStorageList is the parsed struct
 type pairStorageList struct {
 	pairs                []Pair
-	HasListMode          bool
-	ListMode             ListMode
 	HasContinuationToken bool
 	ContinuationToken    string
+	HasListMode          bool
+	ListMode             ListMode
 }
 
 // parsePairStorageList will parse Pair slice into *pairStorageList
@@ -244,6 +231,13 @@ func (s *Storage) parsePairStorageList(opts []Pair) (pairStorageList, error) {
 
 	for _, v := range opts {
 		switch v.Key {
+		case "continuation_token":
+			if result.HasContinuationToken {
+				continue
+			}
+			result.HasContinuationToken = true
+			result.ContinuationToken = v.Value.(string)
+			continue
 		case "list_mode":
 			if result.HasListMode {
 				continue

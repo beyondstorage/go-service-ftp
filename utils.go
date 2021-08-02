@@ -7,10 +7,11 @@ import (
 	"strings"
 	"time"
 
-	"github.com/jlaffaye/ftp"
-
+	endpoint "github.com/beyondstorage/go-endpoint"
+	ps "github.com/beyondstorage/go-storage/v4/pairs"
 	"github.com/beyondstorage/go-storage/v4/services"
 	"github.com/beyondstorage/go-storage/v4/types"
+	"github.com/jlaffaye/ftp"
 )
 
 const (
@@ -22,7 +23,7 @@ type Storage struct {
 	connection *ftp.ServerConn
 	user       string
 	password   string
-	name       string
+	url        string
 	workDir    string
 
 	defaultPairs DefaultStoragePairs
@@ -33,7 +34,7 @@ type Storage struct {
 
 // String implements Storager.String
 func (s *Storage) String() string {
-	return fmt.Sprintf("Storager ftp {Name: %s, User: %s, WorkDir: %s}", s.name, s.user, s.workDir)
+	return fmt.Sprintf("Storager ftp {URL: %s, User: %s, WorkDir: %s}", s.url, s.user, s.workDir)
 }
 
 // NewStorager will create Storager only.
@@ -52,7 +53,7 @@ func newStoragerWithFTPClient(pairs ...types.Pair) (store *Storage, err error) {
 		connection: nil,
 		user:       "anonymous",
 		password:   "anonymous",
-		name:       "localhost:21",
+		url:        "localhost:21",
 		workDir:    "/",
 	}
 
@@ -60,14 +61,41 @@ func newStoragerWithFTPClient(pairs ...types.Pair) (store *Storage, err error) {
 	if err != nil {
 		return
 	}
-	if opt.HasName {
-		store.name = opt.Name
+
+	if opt.HasEndpoint {
+		ep, err := endpoint.Parse(opt.Endpoint)
+		if err != nil {
+			return nil, err
+		}
+		var host string
+		var port int
+		switch ep.Protocol() {
+		case endpoint.ProtocolHTTP:
+			_, host, port = ep.HTTP()
+		default:
+			return nil, services.PairUnsupportedError{Pair: ps.WithEndpoint(opt.Endpoint)}
+		}
+		url := fmt.Sprintf("%s:%d", host, port)
+		store.url = url
 	}
+
 	if opt.HasWorkDir {
 		store.workDir = opt.WorkDir
 	}
-	if opt.HasCredential {
 
+	// Prepare for new protocol Basic
+	if opt.HasCredential {
+		// cp, err := credential.Parse(opt.Credential)
+		// if err != nil {
+		// 	return nil, err
+		// }
+
+		// if cp.Protocol() != credential.ProtocolBasic {
+		// 	return nil, services.PairUnsupportedError{Pair: ps.WithCredential(opt.Credential)}
+		// }
+		// user, password := cp.Basic()
+		// store.user = user
+		// store.password = password
 	}
 	err = store.connect()
 	if err != nil {
@@ -77,7 +105,7 @@ func newStoragerWithFTPClient(pairs ...types.Pair) (store *Storage, err error) {
 }
 
 func (s *Storage) connect() error {
-	c, err := ftp.Dial(s.name, ftp.DialWithTimeout(5*time.Second))
+	c, err := ftp.Dial(s.url, ftp.DialWithTimeout(5*time.Second))
 	if err != nil {
 		return err
 	}

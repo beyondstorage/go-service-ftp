@@ -22,6 +22,10 @@ type listDirInput struct {
 	counter           int
 }
 
+func (input *listDirInput) ContinuationToken() string {
+	return input.continuationToken
+}
+
 func (s *Storage) create(path string, opt pairStorageCreate) (o *Object) {
 	if opt.HasObjectMode && opt.ObjectMode.IsDir() {
 		o = s.newObject(false)
@@ -35,6 +39,7 @@ func (s *Storage) create(path string, opt pairStorageCreate) (o *Object) {
 	o.Path = path
 	return o
 }
+
 func (s *Storage) createDir(ctx context.Context, path string) (o *Object, err error) {
 	rp := s.getAbsPath(path)
 	err = s.connection.MakeDir(rp)
@@ -57,9 +62,6 @@ func (s *Storage) delete(ctx context.Context, path string, opt pairStorageDelete
 	}
 
 	return
-}
-func (input *listDirInput) ContinuationToken() string {
-	return input.continuationToken
 }
 
 func (s *Storage) list(ctx context.Context, path string, opt pairStorageList) (oi *ObjectIterator, err error) {
@@ -111,16 +113,12 @@ func (s *Storage) read(ctx context.Context, path string, w io.Writer, opt pairSt
 
 func (s *Storage) stat(ctx context.Context, path string, opt pairStorageStat) (o *Object, err error) {
 	rp := s.getAbsPath(path)
-	fl, err := s.connection.List(filepath.Dir(rp))
+	fl, err := s.connection.List(rp)
 	if err != nil {
 		return nil, err
 	}
-	var fe *ftp.Entry = nil
-	for i := range fl {
-		if fl[i].Name == filepath.Base(rp) {
-			fe = fl[i]
-		}
-	}
+	var fe *ftp.Entry = fl[0]
+
 	if fe == nil {
 		return nil, services.ErrObjectNotExist
 	}
