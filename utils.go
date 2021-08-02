@@ -164,7 +164,11 @@ func (s *Storage) formatFileObject(fe *ftp.Entry, parent string) (obj *types.Obj
 	obj = types.NewObject(s, false)
 	obj.ID = filepath.Join(parent, fe.Name)
 	obj.Mode = s.mapMode(fe.Type)
-	obj.Path = fe.Target
+	path := filepath.Join(parent, fe.Name)
+	if path[0] == '/' {
+		path = path[1:]
+	}
+	obj.Path = path
 	return
 }
 

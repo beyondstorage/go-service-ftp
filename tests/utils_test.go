@@ -15,11 +15,5 @@ func initTest(t *testing.T) (store types.Storager) {
 		t.Errorf("create storager: %v", err)
 	}
 
-	t.Cleanup(func() {
-		err = store.Delete("")
-		if err != nil {
-			t.Errorf("cleanup: %v", err)
-		}
-	})
 	return
 }

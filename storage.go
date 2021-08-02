@@ -3,6 +3,7 @@ package ftp
 import (
 	"context"
 	"io"
+	"net/textproto"
 	"path/filepath"
 
 	"github.com/beyondstorage/go-storage/v4/pkg/iowrap"
@@ -57,11 +58,10 @@ func (s *Storage) createDir(ctx context.Context, path string) (o *Object, err er
 func (s *Storage) delete(ctx context.Context, path string, opt pairStorageDelete) (err error) {
 	rp := s.getAbsPath(path)
 	err = s.connection.Delete(rp)
-	if err != nil {
+	if err != nil && err.(*textproto.Error).Code != ftp.StatusFileUnavailable {
 		return err
 	}
-
-	return
+	return nil
 }
 
 func (s *Storage) list(ctx context.Context, path string, opt pairStorageList) (oi *ObjectIterator, err error) {
@@ -70,7 +70,6 @@ func (s *Storage) list(ctx context.Context, path string, opt pairStorageList) (o
 		rp: s.getAbsPath(path),
 		// Then convert the dir to slash separator.
 		dir: filepath.ToSlash(path),
-
 		// if HasContinuationToken, we should start after we scanned this token.
 		// else, we can start directly.
 		started:           !opt.HasContinuationToken,
@@ -153,15 +152,15 @@ func (s *Storage) stat(ctx context.Context, path string, opt pairStorageStat) (o
 }
 
 func (s *Storage) write(ctx context.Context, path string, r io.Reader, size int64, opt pairStorageWrite) (n int64, err error) {
-	lr := io.LimitReader(r, n)
+	lr := io.Reader(r)
 	if opt.HasIoCallback {
 		lr = iowrap.CallbackReader(lr, opt.IoCallback)
 	}
 	rp := s.getAbsPath(path)
-	err = s.makeDir(filepath.Dir(rp))
-	if err != nil {
-		return
-	}
+	// _, err = s.createDir(ctx, filepath.Dir(rp))
+	// if err != nil {
+	// 	return
+	// }
 	err = s.connection.Stor(rp, lr)
 	if err != nil {
 		return
