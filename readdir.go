@@ -10,6 +10,9 @@ func (s *Storage) listDirNext(ctx context.Context, page *types.ObjectPage) (err 
 	input := page.Status.(*listDirInput)
 	if input.objList == nil {
 		input.objList, err = s.connection.List(input.rp)
+		if err != nil {
+			return err
+		}
 	}
 	n := len(input.objList)
 	if input.counter >= n {
