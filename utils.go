@@ -7,12 +7,13 @@ import (
 	"strings"
 	"time"
 
+	"github.com/jlaffaye/ftp"
+	mime "github.com/qingstor/go-mime"
+
 	endpoint "github.com/beyondstorage/go-endpoint"
 	ps "github.com/beyondstorage/go-storage/v4/pairs"
 	"github.com/beyondstorage/go-storage/v4/services"
 	"github.com/beyondstorage/go-storage/v4/types"
-	"github.com/jlaffaye/ftp"
-	"github.com/qingstor/go-mime"
 )
 
 // Storage is the example client.
@@ -67,8 +68,8 @@ func newStorager(pairs ...types.Pair) (store *Storage, err error) {
 		var host string
 		var port int
 		switch ep.Protocol() {
-		case endpoint.ProtocolHTTP:
-			_, host, port = ep.HTTP()
+		case endpoint.ProtocolTCP:
+			_, host, port = ep.TCP()
 		default:
 			return nil, services.PairUnsupportedError{Pair: ps.WithEndpoint(opt.Endpoint)}
 		}
@@ -80,20 +81,6 @@ func newStorager(pairs ...types.Pair) (store *Storage, err error) {
 		store.workDir = opt.WorkDir
 	}
 
-	// Prepare for new protocol Basic
-	if opt.HasCredential {
-		// cp, err := credential.Parse(opt.Credential)
-		// if err != nil {
-		// 	return nil, err
-		// }
-
-		// if cp.Protocol() != credential.ProtocolBasic {
-		// 	return nil, services.PairUnsupportedError{Pair: ps.WithCredential(opt.Credential)}
-		// }
-		// user, password := cp.Basic()
-		// store.user = user
-		// store.password = password
-	}
 	err = store.connect()
 	if err != nil {
 		return nil, err
@@ -111,12 +98,14 @@ func (s *Storage) connect() error {
 	if err != nil {
 		return err
 	}
+
 	err = c.ChangeDir(s.workDir)
 	if err != nil {
 		return err
 	}
+
 	s.connection = c
-	return err
+	return nil
 }
 
 func (s *Storage) makeDir(path string) error {
@@ -174,8 +163,10 @@ func (s *Storage) formatFileObject(fe *ftp.Entry, parent string) (obj *types.Obj
 	obj.SetID(path)
 	obj.SetMode(s.mapMode(fe.Type))
 	obj.SetPath(s.getRelPath(path))
-	obj.SetContentLength(int64(fe.Size))
-	obj.SetContentType(mime.DetectFilePath(path))
+	if fe.Type == ftp.EntryTypeFile {
+		obj.SetContentLength(int64(fe.Size))
+		obj.SetContentType(mime.DetectFilePath(path))
+	}
 	obj.SetLastModified(fe.Time)
 	return
 }

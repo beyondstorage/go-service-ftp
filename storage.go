@@ -2,15 +2,17 @@ package ftp
 
 import (
 	"context"
+	"errors"
 	"io"
 	"net/textproto"
 	"path/filepath"
 
+	"github.com/jlaffaye/ftp"
+	mime "github.com/qingstor/go-mime"
+
 	"github.com/beyondstorage/go-storage/v4/pkg/iowrap"
 	"github.com/beyondstorage/go-storage/v4/services"
 	. "github.com/beyondstorage/go-storage/v4/types"
-	"github.com/jlaffaye/ftp"
-	mime "github.com/qingstor/go-mime"
 )
 
 type listDirInput struct {
@@ -58,7 +60,12 @@ func (s *Storage) createDir(ctx context.Context, path string) (o *Object, err er
 func (s *Storage) delete(ctx context.Context, path string, opt pairStorageDelete) (err error) {
 	rp := s.getAbsPath(path)
 	err = s.connection.Delete(rp)
-	if err != nil && err.(*textproto.Error).Code != ftp.StatusFileUnavailable {
+	if err != nil {
+		var txtErr *textproto.Error
+		// ignore error with code ftp.StatusFileUnavailable, to make delete idempotent
+		if errors.As(err, &txtErr) && txtErr.Code == ftp.StatusFileUnavailable {
+			return nil
+		}
 		return err
 	}
 	return nil
@@ -131,6 +138,7 @@ func (s *Storage) stat(ctx context.Context, path string, opt pairStorageStat) (o
 	switch fe.Type {
 	case ftp.EntryTypeFolder:
 		o.Mode |= ModeDir
+
 		return
 	case ftp.EntryTypeLink:
 		o.Mode |= ModeLink
@@ -160,10 +168,6 @@ func (s *Storage) write(ctx context.Context, path string, r io.Reader, size int6
 		lr = iowrap.CallbackReader(lr, opt.IoCallback)
 	}
 	rp := s.getAbsPath(path)
-	// _, err = s.createDir(ctx, filepath.Dir(rp))
-	// if err != nil {
-	// 	return
-	// }
 	err = s.connection.Stor(rp, lr)
 	if err != nil {
 		return
