@@ -12,6 +12,7 @@ import (
 	"github.com/beyondstorage/go-storage/v4/services"
 	"github.com/beyondstorage/go-storage/v4/types"
 	"github.com/jlaffaye/ftp"
+	"github.com/qingstor/go-mime"
 )
 
 // Storage is the example client.
@@ -123,6 +124,7 @@ func (s *Storage) makeDir(path string) error {
 	return s.connection.MakeDir(rp)
 }
 
+// getAbsPath will calculate object storage's abs path(include workDir).
 func (s *Storage) getAbsPath(path string) string {
 	if filepath.IsAbs(path) {
 		return path
@@ -134,6 +136,12 @@ func (s *Storage) getAbsPath(path string) string {
 		absPath += "/"
 	}
 	return absPath
+}
+
+// getRelPath will get object storage's rel path(exclude workDir).
+func (s *Storage) getRelPath(path string) string {
+	prefix := strings.TrimPrefix(s.workDir, "/")
+	return strings.TrimPrefix(path, prefix)
 }
 
 func (s *Storage) getNameList(path string) (namelist []string, err error) {
@@ -161,14 +169,14 @@ func (s *Storage) mapMode(fet ftp.EntryType) types.ObjectMode {
 }
 
 func (s *Storage) formatFileObject(fe *ftp.Entry, parent string) (obj *types.Object, err error) {
-	obj = types.NewObject(s, false)
-	obj.ID = filepath.Join(parent, fe.Name)
-	obj.Mode = s.mapMode(fe.Type)
 	path := filepath.Join(parent, fe.Name)
-	if path[0] == '/' {
-		path = path[1:]
-	}
-	obj.Path = path
+	obj = types.NewObject(s, false)
+	obj.SetID(path)
+	obj.SetMode(s.mapMode(fe.Type))
+	obj.SetPath(s.getRelPath(path))
+	obj.SetContentLength(int64(fe.Size))
+	obj.SetContentType(mime.DetectFilePath(path))
+	obj.SetLastModified(fe.Time)
 	return
 }
 
