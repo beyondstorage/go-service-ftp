@@ -65,19 +65,22 @@ func (s *Storage) delete(ctx context.Context, path string, opt pairStorageDelete
 }
 
 func (s *Storage) list(ctx context.Context, path string, opt pairStorageList) (oi *ObjectIterator, err error) {
-	input := listDirInput{
-		// Always keep service original name as rp.
-		rp: s.getAbsPath(path),
-		// Then convert the dir to slash separator.
-		dir: filepath.ToSlash(path),
-		// if HasContinuationToken, we should start after we scanned this token.
-		// else, we can start directly.
-		started:           !opt.HasContinuationToken,
-		continuationToken: opt.ContinuationToken,
-		counter:           0,
+	if !opt.HasListMode || opt.ListMode.IsDir() {
+		input := listDirInput{
+			// Always keep service original name as rp.
+			rp: s.getAbsPath(path),
+			// Then convert the dir to slash separator.
+			dir: filepath.ToSlash(path),
+			// if HasContinuationToken, we should start after we scanned this token.
+			// else, we can start directly.
+			started:           !opt.HasContinuationToken,
+			continuationToken: opt.ContinuationToken,
+			counter:           0,
+		}
+		return NewObjectIterator(ctx, s.listDirNext, &input), nil
+	} else {
+		return nil, services.ListModeInvalidError{Actual: opt.ListMode}
 	}
-
-	return NewObjectIterator(ctx, s.listDirNext, &input), nil
 }
 
 func (s *Storage) metadata(opt pairStorageMetadata) (meta *StorageMeta) {
