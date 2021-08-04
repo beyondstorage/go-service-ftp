@@ -120,17 +120,17 @@ func (s *Storage) getAbsPath(path string) string {
 	}
 	absPath := filepath.Join(s.workDir, path)
 
-	// Join will clean the trailing "/", we need to append it back.
-	if strings.HasSuffix(path, "/") {
-		absPath += "/"
+	// Join will clean the trailng "/", we need to append it back.
+	if strings.HasSuffix(path, string(filepath.Separator)) {
+		absPath += string(filepath.Separator)
 	}
 	return absPath
 }
 
 // getRelPath will get object storage's rel path(exclude workDir).
 func (s *Storage) getRelPath(path string) string {
-	prefix := strings.TrimPrefix(s.workDir, "/")
-	return strings.TrimPrefix(path, prefix)
+	path = strings.TrimPrefix(path, string(filepath.Separator))
+	return strings.TrimPrefix(path, s.workDir)
 }
 
 func (s *Storage) getNameList(path string) (namelist []string, err error) {

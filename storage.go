@@ -126,7 +126,9 @@ func (s *Storage) stat(ctx context.Context, path string, opt pairStorageStat) (o
 	if err != nil {
 		return nil, err
 	}
-
+	if 0 == len(fl) {
+		return nil, services.ErrObjectNotExist
+	}
 	var fe *ftp.Entry = fl[0]
 	if fe == nil {
 		return nil, services.ErrObjectNotExist
