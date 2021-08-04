@@ -1,6 +1,7 @@
 name = "ftp"
 
-[namespace.storage]
+[namespace.storage.new]
+optional = ["endpoint","work_dir","credential"]
 
 [namespace.storage.op.create]
 optional = ["object_mode"]
@@ -9,7 +10,7 @@ optional = ["object_mode"]
 optional = ["object_mode"]
 
 [namespace.storage.op.list]
-optional = ["list_mode"]
+optional = ["list_mode","continuation_token"]
 
 [namespace.storage.op.read]
 optional = ["offset", "io_callback", "size"]

@@ -97,6 +97,12 @@ type pairStorageNew struct {
 
 	// Required pairs
 	// Optional pairs
+	HasCredential bool
+	Credential    string
+	HasEndpoint   bool
+	Endpoint      string
+	HasWorkDir    bool
+	WorkDir       string
 }
 
 // parsePairStorageNew will parse Pair slice into *pairStorageNew
@@ -109,6 +115,24 @@ func parsePairStorageNew(opts []Pair) (pairStorageNew, error) {
 		switch v.Key {
 		// Required pairs
 		// Optional pairs
+		case "credential":
+			if result.HasCredential {
+				continue
+			}
+			result.HasCredential = true
+			result.Credential = v.Value.(string)
+		case "endpoint":
+			if result.HasEndpoint {
+				continue
+			}
+			result.HasEndpoint = true
+			result.Endpoint = v.Value.(string)
+		case "work_dir":
+			if result.HasWorkDir {
+				continue
+			}
+			result.HasWorkDir = true
+			result.WorkDir = v.Value.(string)
 		}
 	}
 
@@ -192,9 +216,11 @@ func (s *Storage) parsePairStorageDelete(opts []Pair) (pairStorageDelete, error)
 
 // pairStorageList is the parsed struct
 type pairStorageList struct {
-	pairs       []Pair
-	HasListMode bool
-	ListMode    ListMode
+	pairs                []Pair
+	HasContinuationToken bool
+	ContinuationToken    string
+	HasListMode          bool
+	ListMode             ListMode
 }
 
 // parsePairStorageList will parse Pair slice into *pairStorageList
@@ -205,6 +231,13 @@ func (s *Storage) parsePairStorageList(opts []Pair) (pairStorageList, error) {
 
 	for _, v := range opts {
 		switch v.Key {
+		case "continuation_token":
+			if result.HasContinuationToken {
+				continue
+			}
+			result.HasContinuationToken = true
+			result.ContinuationToken = v.Value.(string)
+			continue
 		case "list_mode":
 			if result.HasListMode {
 				continue
