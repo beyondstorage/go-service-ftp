@@ -10,6 +10,7 @@ import (
 	"github.com/jlaffaye/ftp"
 	mime "github.com/qingstor/go-mime"
 
+	credential "github.com/beyondstorage/go-credential"
 	endpoint "github.com/beyondstorage/go-endpoint"
 	ps "github.com/beyondstorage/go-storage/v4/pairs"
 	"github.com/beyondstorage/go-storage/v4/services"
@@ -79,6 +80,21 @@ func newStorager(pairs ...types.Pair) (store *Storage, err error) {
 
 	if opt.HasWorkDir {
 		store.workDir = opt.WorkDir
+	}
+
+	if opt.HasCredential {
+		cp, err := credential.Parse(opt.Credential)
+		if err != nil {
+			return nil, err
+		}
+		switch cp.Protocol() {
+		case credential.ProtocolBasic:
+			user, pass := cp.Basic()
+			store.password = pass
+			store.user = user
+		default:
+			return nil, services.PairUnsupportedError{Pair: ps.WithCredential(opt.Credential)}
+		}
 	}
 
 	err = store.connect()
