@@ -187,9 +187,7 @@ jobs:
           userlist_deny=NO
           EOF
           sudo service vsftpd restart
-          sudo adduser testuser <<EOF
-          password123:? password123:?
-          EOF
+          echo password123:? | sudo adduser testuser --stdin 
           echo "testuser" | sudo tee -a /etc/vsftpd.userlist
           sudo mkdir /home/testuser/ftp
           sudo chown nobody:nogroup /home/testuser/ftp
@@ -205,6 +203,9 @@ jobs:
 
       - name: Build
         run: make build
+
+      - name: Prepare ENV
+        run: mv Makefile.env.example Makefile.env
 
       - name: Test
         run: make integration_test
