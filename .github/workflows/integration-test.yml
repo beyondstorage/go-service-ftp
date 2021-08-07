@@ -189,10 +189,12 @@ jobs:
           EOF
           sudo service vsftpd restart
           sudo adduser testuser
-          spawn sudo passwd testuser
-          send "password123:?"
-          interact
-          expect eof
+          expect -c "\n\
+          spawn sudo passwd testuser\n\
+          send "password123:?"\n\
+          interact\n\
+          expect eof\n\
+          "
           echo "testuser" | sudo tee -a /etc/vsftpd.userlist
           sudo mkdir /home/testuser/ftp
           sudo chown nobody:nogroup /home/testuser/ftp
