@@ -21,6 +21,7 @@ jobs:
       - name: Run vsftpd Server
         run: |
           sudo apt-get install vsftpd
+          sudo apt-get install expect
           sudo service vsftpd start
           #sudo sed -e 's/anonymous_enable=YES/anonymous_enable=No/g' /etc/vsftpd.conf
           sudo cat /etc/vsftpd.conf || /etc/vsftpd.conf <<- EOF
@@ -188,7 +189,10 @@ jobs:
           EOF
           sudo service vsftpd restart
           sudo adduser testuser
-          echo 'password123:?' | sudo passwd testuser -stdin 
+          spawn sudo passwd testuser
+          send "password123:?"
+          interact
+          expect eof
           echo "testuser" | sudo tee -a /etc/vsftpd.userlist
           sudo mkdir /home/testuser/ftp
           sudo chown nobody:nogroup /home/testuser/ftp
