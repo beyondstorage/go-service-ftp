@@ -188,7 +188,7 @@ jobs:
           EOF
           sudo service vsftpd restart
           sudo adduser testuser
-          echo password123:? | sudo passwd testuser --stdin 
+          echo 'password123:?' | sudo passwd testuser -stdin 
           echo "testuser" | sudo tee -a /etc/vsftpd.userlist
           sudo mkdir /home/testuser/ftp
           sudo chown nobody:nogroup /home/testuser/ftp
