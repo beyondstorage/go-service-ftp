@@ -207,5 +207,5 @@ jobs:
       - name: Prepare ENV
         run: mv Makefile.env.example Makefile.env
 
-      - name: Test
+      - name: Integration Test
         run: make integration_test
