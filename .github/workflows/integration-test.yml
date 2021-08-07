@@ -187,7 +187,8 @@ jobs:
           userlist_deny=NO
           EOF
           sudo service vsftpd restart
-          echo password123:? | sudo adduser testuser --stdin 
+          sudo adduser testuser
+          echo password123:? | sudo passwd testuser --stdin 
           echo "testuser" | sudo tee -a /etc/vsftpd.userlist
           sudo mkdir /home/testuser/ftp
           sudo chown nobody:nogroup /home/testuser/ftp
