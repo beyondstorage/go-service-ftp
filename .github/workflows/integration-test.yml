@@ -33,7 +33,7 @@ jobs:
         
       - name: Prepare config file
         run: |
-          cat ftpserver.json | ftpserver.json <<- EOF
+          cat > ftpserver.json <<- EOF
           {
             "version": 1,
             "accesses": [
