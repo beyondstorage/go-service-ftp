@@ -18,16 +18,53 @@ jobs:
         with:
           go-version: ${{ matrix.go }}
 
-      - name: Run ftp Server
+      - name: Download ftpserver release
+        uses: robinraju/release-downloader@v1.1
+        with:
+          repository: fclairamb/ftpserver
+          tag: v0.10.0
+          fileName: ftpserver-linux-amd64
+          
+      - name: Prepare config file
         run: |
-
+          cat ftpserver.json || ftpserver.json <<- EOF
+          {
+            "version": 1,
+            "accesses": [
+              {
+                "sync_and_delete": {
+                  "enable": true
+                },
+              "user": "user",
+              "pass": "password",
+              "fs": "os",
+              "params": {
+                "basePath": "./tmp"
+              }
+            }
+          ],
+          "passive_transfer_port_range": {
+            "start": 2122,
+            "end": 2130
+          }
+          }
+          EOF
+          
+      - name: Create test dir
+        run: mkdir tmp
+        
+      - name: Start ftp server
+        run: |
+          chmod 777 ftpserver-linux-amd64
+          ./ftpserver-linux-amd64
+      
       - name: Checkout repository
         uses: actions/checkout@v2
 
       - name: Build
         run: make build
 
-      - name: Prepare ENV
+      - name: Prepare env
         run: mv Makefile.env.example Makefile.env
 
       - name: Integration Test
