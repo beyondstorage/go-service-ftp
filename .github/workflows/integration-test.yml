@@ -27,6 +27,7 @@ jobs:
           
       - name: Prepare config file
         run: |
+          touch ftpserver.json
           cat ftpserver.json | ftpserver.json <<- EOF
           {
             "version": 1,
