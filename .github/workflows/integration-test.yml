@@ -29,11 +29,10 @@ jobs:
           fileName: ftpserver-linux-amd64
           
       - name: Create config file
-        run: \> ftpserver.json
+        run: touch ftpserver.json
         
       - name: Prepare config file
         run: |
-          
           cat ftpserver.json | ftpserver.json <<- EOF
           {
             "version": 1,
