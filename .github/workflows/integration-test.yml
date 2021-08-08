@@ -27,7 +27,10 @@ jobs:
           repository: fclairamb/ftpserver
           tag: v0.10.0
           fileName: ftpserver-linux-amd64
-          
+      
+      - name: Install
+        run: sudo apt install screen
+      
       - name: Create config file
         run: touch ftpserver.json
         
@@ -62,7 +65,7 @@ jobs:
       - name: Start ftp server
         run: |
           chmod 777 ftpserver-linux-amd64
-          ./ftpserver-linux-amd64
+          screen -S ftpserver ./ftpserver-linux-amd64
       
       - name: Build
         run: make build
