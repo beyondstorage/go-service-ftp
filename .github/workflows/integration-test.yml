@@ -18,6 +18,9 @@ jobs:
         with:
           go-version: ${{ matrix.go }}
 
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
       - name: Download ftpserver release
         uses: robinraju/release-downloader@v1.1
         with:
@@ -27,7 +30,7 @@ jobs:
           
       - name: Prepare config file
         run: |
-          touch "ftpserver.json"
+          > ftpserver.json
           cat ftpserver.json | ftpserver.json <<- EOF
           {
             "version": 1,
@@ -59,9 +62,6 @@ jobs:
           chmod 777 ftpserver-linux-amd64
           ./ftpserver-linux-amd64
       
-      - name: Checkout repository
-        uses: actions/checkout@v2
-
       - name: Build
         run: make build
 
