@@ -27,7 +27,7 @@ jobs:
           
       - name: Prepare config file
         run: |
-          cat ftpserver.json || ftpserver.json <<- EOF
+          cat ftpserver.json | ftpserver.json <<- EOF
           {
             "version": 1,
             "accesses": [
@@ -47,8 +47,8 @@ jobs:
             "start": 2122,
             "end": 2130
           }
-          }
-          EOF
+         }
+         EOF
           
       - name: Create test dir
         run: mkdir tmp
