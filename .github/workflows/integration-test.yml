@@ -28,9 +28,12 @@ jobs:
           tag: v0.10.0
           fileName: ftpserver-linux-amd64
           
+      - name: Create config file
+        run: \> ftpserver.json
+        
       - name: Prepare config file
         run: |
-          > ftpserver.json
+          
           cat ftpserver.json | ftpserver.json <<- EOF
           {
             "version": 1,
