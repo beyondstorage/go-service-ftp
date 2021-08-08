@@ -65,7 +65,7 @@ jobs:
       - name: Start ftp server
         run: |
           chmod 777 ftpserver-linux-amd64
-          screen -dS ftpserver ./ftpserver-linux-amd64
+          screen -dmS ftpserver ./ftpserver-linux-amd64
  
       
       - name: Build
