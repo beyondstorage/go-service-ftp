@@ -20,6 +20,8 @@ Set following environment variables:
 
 ```shell
 export STORAGE_FTP_INTEGRATION_TEST=on
+export STORAGE_FTP_CREDENTIAL=basic:user:password
+export STORAGE_FTP_ENDPOINT=tcp:127.0.0.1:2121
 ```
 
 Run tests
