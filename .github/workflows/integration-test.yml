@@ -6,6 +6,10 @@ jobs:
   integration_test:
     name: Integration Test
     runs-on: ${{ matrix.os }}
+    env:
+      STORAGE_FTP_INTEGRATION_TEST: on
+      STORAGE_FTP_CREDENTIAL: basic:user:password
+      STORAGE_FTP_ENDPOINT: 127.0.0.1:2121
 
     strategy:
       matrix:
@@ -41,12 +45,6 @@ jobs:
 
       - name: Build
         run: make build
-
-      - name: Prepare env
-        run: |
-          export STORAGE_FTP_INTEGRATION_TEST=on
-          export STORAGE_FTP_CREDENTIAL=basic:user:password
-          export STORAGE_FTP_ENDPOINT=tcp:127.0.0.1:2121
 
       - name: Integration Test
         run: make integration_test
