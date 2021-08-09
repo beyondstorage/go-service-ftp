@@ -93,6 +93,7 @@ func newStorager(pairs ...types.Pair) (store *Storage, err error) {
 		store.user = user
 	default:
 		return nil, services.PairUnsupportedError{Pair: ps.WithCredential(opt.Credential)}
+
 	}
 
 	err = store.connect()
