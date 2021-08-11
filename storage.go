@@ -124,7 +124,16 @@ func (s *Storage) stat(ctx context.Context, path string, opt pairStorageStat) (o
 	rp := s.getAbsPath(path)
 	fl, err := s.connection.List(rp)
 	if err != nil {
-		return nil, err
+		flst, err := s.connection.List(filepath.Dir(rp))
+		if err != nil {
+			return nil, err
+		}
+		for i := range flst {
+			if filepath.Base(rp) == flst[i].Name {
+				fl = []*ftp.Entry{flst[i]}
+				break
+			}
+		}
 	}
 	if len(fl) == 0 {
 		return nil, services.ErrObjectNotExist
