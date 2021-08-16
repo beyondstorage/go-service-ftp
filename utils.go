@@ -82,18 +82,19 @@ func newStorager(pairs ...types.Pair) (store *Storage, err error) {
 		store.workDir = opt.WorkDir
 	}
 
-	cp, err := credential.Parse(opt.Credential)
-	if err != nil {
-		return nil, err
-	}
-	switch cp.Protocol() {
-	case credential.ProtocolBasic:
-		user, pass := cp.Basic()
-		store.password = pass
-		store.user = user
-	default:
-		return nil, services.PairUnsupportedError{Pair: ps.WithCredential(opt.Credential)}
-
+	if opt.HasCredential {
+		cp, err := credential.Parse(opt.Credential)
+		if err != nil {
+			return nil, err
+		}
+		switch cp.Protocol() {
+		case credential.ProtocolBasic:
+			user, pass := cp.Basic()
+			store.password = pass
+			store.user = user
+		default:
+			return nil, services.PairUnsupportedError{Pair: ps.WithCredential(opt.Credential)}
+		}
 	}
 
 	err = store.connect()
