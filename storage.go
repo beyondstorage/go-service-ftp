@@ -63,7 +63,7 @@ func (s *Storage) delete(ctx context.Context, path string, opt pairStorageDelete
 	if err != nil {
 		var txtErr *textproto.Error
 		// ignore error with code ftp.StatusFileUnavailable, to make delete idempotent
-		if errors.As(err, &txtErr) && txtErr.Code == ftp.StatusFileUnavailable {
+		if errors.As(err, &txtErr) && (txtErr.Code == ftp.StatusFileUnavailable || txtErr.Code == ftp.StatusFileActionIgnored) {
 			return nil
 		}
 		return err
