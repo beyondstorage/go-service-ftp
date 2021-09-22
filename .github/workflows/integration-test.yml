@@ -3,7 +3,7 @@ name: "Integration Test"
 on: [push, pull_request]
 
 jobs:
-  integration_test:
+  integration_test_1:
     name: Integration Test (fclairamb/ftpserver)
     runs-on: ${{ matrix.os }}
     env:
@@ -50,7 +50,7 @@ jobs:
         run: make integration_test
 
 jobs:
-  integration_test:
+  integration_test_2:
     name: Integration Test (asf/mina-ftpserver)
     runs-on: ${{ matrix.os }}
     env:
