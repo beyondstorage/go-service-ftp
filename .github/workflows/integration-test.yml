@@ -49,7 +49,6 @@ jobs:
       - name: Integration Test
         run: make integration_test
 
-jobs:
   integration_test_2:
     name: Integration Test (asf/mina-ftpserver)
     runs-on: ${{ matrix.os }}
