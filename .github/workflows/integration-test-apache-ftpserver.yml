@@ -30,15 +30,15 @@ jobs:
         run: wget https://dlcdn.apache.org/mina/ftpserver/1.1.1/dist/apache-ftpserver-1.1.1.zip
 
       - name: Unzip file
-        run: unzip apache-ftp-1.1.1.zip
+        run: unzip apache-ftpserver-1.1.1.zip
 
       - name: Clean ftp home
-        run: rm apache-ftp-1.1.1/res/home/README.md
+        run: rm apache-ftpserver-1.1.1/res/home/README.md
 
       - name: Start ftp server
         run: |
-          chmod 777 apache-ftp-1.1.1/bin/ftpd.sh
-          ./apache-ftp-1.1.1/bin/ftpd.sh &
+          chmod 777 apache-ftpserver-1.1.1/bin/ftpd.sh
+          ./apache-ftpserver-1.1.1/bin/ftpd.sh &
 
       - name: Build
         run: make build
