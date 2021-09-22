@@ -1,6 +1,53 @@
-name: "Integration Test On Apacheftpserver"
+name: "Integration Test"
 
 on: [push, pull_request]
+
+jobs:
+  integration_test:
+    name: Integration Test (fclairamb/ftpserver)
+    runs-on: ${{ matrix.os }}
+    env:
+      STORAGE_FTP_INTEGRATION_TEST: on
+      STORAGE_FTP_CREDENTIAL: basic:user:password
+      STORAGE_FTP_ENDPOINT: tcp:127.0.0.1:2121
+
+    strategy:
+      matrix:
+        go: ["1.15", "1.16"]
+        os: [ubuntu-latest]
+
+    steps:
+      - name: Set up Go 1.x
+        uses: actions/setup-go@v2
+        with:
+          go-version: ${{ matrix.go }}
+
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Download ftpserver release
+        uses: robinraju/release-downloader@v1.1
+        with:
+          repository: fclairamb/ftpserver
+          tag: v0.10.0
+          fileName: ftpserver-linux-amd64
+
+      - name: Prepare config file
+        run: mv ./tests/ftpserver.json ./ftpserver.json
+
+      - name: Create test dir
+        run: mkdir tmp
+
+      - name: Start ftp server
+        run: |
+          chmod 777 ftpserver-linux-amd64
+          ./ftpserver-linux-amd64 &
+
+      - name: Build
+        run: make build
+
+      - name: Integration Test
+        run: make integration_test
 
 jobs:
   integration_test:
