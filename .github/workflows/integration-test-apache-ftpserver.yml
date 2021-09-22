@@ -33,7 +33,7 @@ jobs:
         run: unzip apache-ftpserver-1.1.1.zip
 
       - name: Clean ftp home
-        run: rm apache-ftpserver-1.1.1/res/home/README.md
+        run: rm apache-ftpserver-1.1.1/res/home/README.txt
 
       - name: Start ftp server
         run: |
