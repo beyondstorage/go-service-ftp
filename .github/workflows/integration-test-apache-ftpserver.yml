@@ -1,19 +1,20 @@
-name: "Integration Test"
+name: "Integration Test On Apacheftpserver"
 
 on: [push, pull_request]
 
 jobs:
   integration_test:
-    name: Integration Test
+    name: Integration Test (asf/mina-ftpserver)
     runs-on: ${{ matrix.os }}
     env:
       STORAGE_FTP_INTEGRATION_TEST: on
-      STORAGE_FTP_CREDENTIAL: basic:user:password
+      STORAGE_FTP_CREDENTIAL: basic:admin:admin
       STORAGE_FTP_ENDPOINT: tcp:127.0.0.1:2121
 
     strategy:
       matrix:
         go: ["1.15", "1.16"]
+        java: ["8"]
         os: [ubuntu-latest]
 
     steps:
@@ -25,23 +26,19 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v2
 
-      - name: Download ftpserver release
-        uses: robinraju/release-downloader@v1.1
-        with:
-          repository: fclairamb/ftpserver
-          tag: v0.10.0
-          fileName: ftpserver-linux-amd64
+      - name: Download apache ftpserver 
+        run: wget https://dlcdn.apache.org/mina/ftpserver/1.1.1/dist/apache-ftpserver-1.1.1.zip
 
-      - name: Prepare config file
-        run: mv ./tests/ftpserver.json ./ftpserver.json
+      - name: Unzip file
+        run: unzip apache-ftp-1.1.1.zip
 
-      - name: Create test dir
-        run: mkdir tmp
+      - name: Clean ftp home
+        run: rm apache-ftp-1.1.1/res/home/README.md
 
       - name: Start ftp server
         run: |
-          chmod 777 ftpserver-linux-amd64
-          ./ftpserver-linux-amd64 &
+          chmod 777 apache-ftp-1.1.1/bin/ftpd.sh
+          ./apache-ftp-1.1.1/bin/ftpd.sh &
 
       - name: Build
         run: make build
