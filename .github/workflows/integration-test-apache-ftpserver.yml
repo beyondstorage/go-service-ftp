@@ -38,7 +38,7 @@ jobs:
       - name: Start ftp server
         run: |
           chmod 777 apache-ftpserver-1.1.1/bin/ftpd.sh
-          ./apache-ftpserver-1.1.1/bin/ftpd.sh ./apache-ftpserver-1.1.1/res/conf/ftpd-typical.xml &
+          ./apache-ftpserver-1.1.1/bin/ftpd.sh res/conf/ftpd-typical.xml &
 
       - name: Build
         run: make build
