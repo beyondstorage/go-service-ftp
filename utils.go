@@ -79,7 +79,7 @@ func newStorager(pairs ...types.Pair) (store *Storage, err error) {
 	}
 
 	if opt.HasWorkDir {
-		store.workDir = opt.WorkDir
+		store.workDir = filepath.ToSlash(opt.WorkDir)
 	}
 
 	if opt.HasCredential {

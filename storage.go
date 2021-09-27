@@ -1,6 +1,7 @@
 package ftp
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"io"
@@ -37,7 +38,7 @@ func (s *Storage) create(path string, opt pairStorageCreate) (o *Object) {
 		o = s.newObject(false)
 		o.Mode = ModeRead
 	}
-
+	path = filepath.ToSlash(path)
 	o.ID = filepath.Join(s.workDir, path)
 	o.Path = path
 	return o
@@ -174,11 +175,17 @@ func (s *Storage) stat(ctx context.Context, path string, opt pairStorageStat) (o
 }
 
 func (s *Storage) write(ctx context.Context, path string, r io.Reader, size int64, opt pairStorageWrite) (n int64, err error) {
-	lr := io.Reader(r)
+	rp := s.getAbsPath(path)
+	if size == 0 {
+		r = bytes.NewReader([]byte{})
+	}
+	if r == nil {
+		return 0, services.ErrObjectNotExist
+	}
+	lr := io.LimitReader(r, size)
 	if opt.HasIoCallback {
 		lr = iowrap.CallbackReader(lr, opt.IoCallback)
 	}
-	rp := s.getAbsPath(path)
 	err = s.connection.Stor(rp, lr)
 	if err != nil {
 		return
