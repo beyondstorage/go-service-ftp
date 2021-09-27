@@ -45,8 +45,8 @@ github.com/antihax/optional v1.0.0/go.mod h1:uupD/76wgC+ih3iEmQUL+0Ugr19nfwCT1kd
 github.com/armon/circbuf v0.0.0-20150827004946-bbbad097214e/go.mod h1:3U/XgcO3hCbHZ8TKRvWD2dDTCfh9M9ya+I9JpbB7O8o=
 github.com/armon/go-metrics v0.0.0-20180917152333-f0300d1749da/go.mod h1:Q73ZrmVTwzkszR9V5SSuryQ31EELlFMUz1kKyl939pY=
 github.com/armon/go-radix v0.0.0-20180808171621-7fddfc383310/go.mod h1:ufUuZ+zHj4x4TnLV4JWEpy2hxWSpsRywHrMgIH9cCH8=
-github.com/beyondstorage/go-credential v0.0.0-20210918043243-9d146b959702 h1:Ys3pmvg46a5A0TM650rYXPuVtSh1MRse+SNZ/Xoq/KQ=
-github.com/beyondstorage/go-credential v0.0.0-20210918043243-9d146b959702/go.mod h1:A7WYzKKk479gERCs5/5jWi0kNN24bqeMjD8IJik4JBA=
+github.com/beyondstorage/go-credential v0.1.0 h1:B03n5H13ms1A8QceTJZe2HQoru+pO+6Dw9q7mN2FIWA=
+github.com/beyondstorage/go-credential v0.1.0/go.mod h1:A7WYzKKk479gERCs5/5jWi0kNN24bqeMjD8IJik4JBA=
 github.com/beyondstorage/go-endpoint v1.1.0 h1:cpjmQdrAMyaLoT161NIFU/eXcsuMI3xViycid5/mBZg=
 github.com/beyondstorage/go-endpoint v1.1.0/go.mod h1:P2hknaGrziOJJKySv/XnAiVw/d3v12/LZu2gSxEx4nM=
 github.com/beyondstorage/go-integration-test/v4 v4.5.0 h1:PMrB+aWd6yNwlrJSJOjqNLJtujsKderoSkG9/QOEQr0=
