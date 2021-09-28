@@ -1,24 +1,22 @@
 package ftp
 
 import (
+	"bytes"
 	"context"
 	"errors"
-	"io"
-	"net/textproto"
-	"path/filepath"
-
-	"github.com/jlaffaye/ftp"
-	mime "github.com/qingstor/go-mime"
-
 	"github.com/beyondstorage/go-storage/v4/pkg/iowrap"
 	"github.com/beyondstorage/go-storage/v4/services"
 	. "github.com/beyondstorage/go-storage/v4/types"
+	"github.com/jlaffaye/ftp"
+	mime "github.com/qingstor/go-mime"
+	"io"
+	"net/textproto"
+	"path/filepath"
 )
 
 type listDirInput struct {
-	rp  string
-	dir string
-
+	rp                string
+	dir               string
 	started           bool
 	continuationToken string
 	objList           []*ftp.Entry
@@ -37,7 +35,7 @@ func (s *Storage) create(path string, opt pairStorageCreate) (o *Object) {
 		o = s.newObject(false)
 		o.Mode = ModeRead
 	}
-
+	path = filepath.ToSlash(path)
 	o.ID = filepath.Join(s.workDir, path)
 	o.Path = path
 	return o
@@ -49,7 +47,6 @@ func (s *Storage) createDir(ctx context.Context, path string) (o *Object, err er
 	if err != nil {
 		return nil, err
 	}
-
 	o = s.newObject(true)
 	o.ID = rp
 	o.Path = path
@@ -94,7 +91,6 @@ func (s *Storage) metadata(opt pairStorageMetadata) (meta *StorageMeta) {
 	meta = NewStorageMeta()
 	meta.WorkDir = s.workDir
 	return meta
-
 }
 
 func (s *Storage) read(ctx context.Context, path string, w io.Writer, opt pairStorageRead) (n int64, err error) {
@@ -113,7 +109,6 @@ func (s *Storage) read(ctx context.Context, path string, w io.Writer, opt pairSt
 			err = closeErr
 		}
 	}()
-
 	if opt.HasSize {
 		return io.CopyN(w, r, opt.Size)
 	}
@@ -145,15 +140,12 @@ func (s *Storage) stat(ctx context.Context, path string, opt pairStorageStat) (o
 	o = s.newObject(true)
 	o.ID = rp
 	o.Path = path
-
 	switch fe.Type {
 	case ftp.EntryTypeFolder:
 		o.Mode |= ModeDir
-
 		return
 	case ftp.EntryTypeLink:
 		o.Mode |= ModeLink
-
 		target := fe.Target
 		if err != nil {
 			return nil, err
@@ -161,24 +153,27 @@ func (s *Storage) stat(ctx context.Context, path string, opt pairStorageStat) (o
 		o.SetLinkTarget(target)
 	default:
 		o.Mode |= ModeRead | ModePage | ModeAppend
-
 		o.SetContentLength(int64(fe.Size))
 		o.SetLastModified(fe.Time)
-
 		if v := mime.DetectFilePath(path); v != "" {
 			o.SetContentType(v)
 		}
 	}
-
 	return o, nil
 }
 
 func (s *Storage) write(ctx context.Context, path string, r io.Reader, size int64, opt pairStorageWrite) (n int64, err error) {
-	lr := io.Reader(r)
+	rp := s.getAbsPath(path)
+	if size == 0 {
+		r = bytes.NewReader([]byte{})
+	}
+	if r == nil {
+		return 0, services.ErrObjectNotExist
+	}
+	lr := io.LimitReader(r, size)
 	if opt.HasIoCallback {
 		lr = iowrap.CallbackReader(lr, opt.IoCallback)
 	}
-	rp := s.getAbsPath(path)
 	err = s.connection.Stor(rp, lr)
 	if err != nil {
 		return
