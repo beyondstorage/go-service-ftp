@@ -109,10 +109,17 @@ func (s *Storage) read(ctx context.Context, path string, w io.Writer, opt pairSt
 			err = closeErr
 		}
 	}()
+
+	var rc io.ReadCloser
+	rc = r
 	if opt.HasSize {
-		return io.CopyN(w, r, opt.Size)
+		rc = iowrap.LimitReadCloser(rc, opt.Size)
 	}
-	return io.Copy(w, r)
+	if opt.HasIoCallback {
+		rc = iowrap.CallbackReadCloser(rc, opt.IoCallback)
+	}
+
+	return io.Copy(w, rc)
 }
 
 func (s *Storage) stat(ctx context.Context, path string, opt pairStorageStat) (o *Object, err error) {
