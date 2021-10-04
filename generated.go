@@ -73,8 +73,6 @@ func setStorageSystemMetadata(s *StorageMeta, sm StorageSystemMetadata) {
 }
 
 // WithDefaultStoragePairs will apply default_storage_pairs value to Options.
-//
-// set default pairs for storager actions
 func WithDefaultStoragePairs(v DefaultStoragePairs) Pair {
 	return Pair{Key: "default_storage_pairs", Value: v}
 }
