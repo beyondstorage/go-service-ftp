@@ -171,6 +171,10 @@ func (s *Storage) stat(ctx context.Context, path string, opt pairStorageStat) (o
 
 func (s *Storage) write(ctx context.Context, path string, r io.Reader, size int64, opt pairStorageWrite) (n int64, err error) {
 	rp := s.getAbsPath(path)
+	err = s.makeDir(filepath.Dir(rp))
+	if err != nil {
+		return
+	}
 	if size == 0 {
 		r = bytes.NewReader([]byte{})
 	}
