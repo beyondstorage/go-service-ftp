@@ -125,6 +125,9 @@ func (s *Storage) connect() error {
 }
 
 func (s *Storage) makeDir(path string) error {
+	if path == s.workDir || path == "." {
+		return nil
+	}
 	rp := s.getAbsPath(path)
 	return s.connection.MakeDir(rp)
 }
