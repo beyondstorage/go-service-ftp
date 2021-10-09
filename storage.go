@@ -112,11 +112,11 @@ func (s *Storage) read(ctx context.Context, path string, w io.Writer, opt pairSt
 
 	var rc io.ReadCloser
 	rc = r
-	if opt.HasSize {
-		rc = iowrap.LimitReadCloser(rc, opt.Size)
-	}
 	if opt.HasIoCallback {
 		rc = iowrap.CallbackReadCloser(rc, opt.IoCallback)
+	}
+	if opt.HasSize {
+		return io.CopyN(w, rc, opt.Size)
 	}
 
 	return io.Copy(w, rc)
